@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Driver Info Card (Lighter Gray Gradient with Black Text)</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: transparent; /* Transparent background for embedding */
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+
+    /* Lighter gray gradient container with hover effect */
+    .card {
+      width: 400px;
+      padding: 20px;
+      text-align: left;
+      border-radius: 10px;
+      background: linear-gradient(135deg, #d4d4d4, #e7e7e7);
+      box-shadow:
+          0 0 15px rgba(0, 0, 0, 0.6),
+          0 0 20px rgba(0, 0, 0, 0.4) inset;
+      /* Removed color: #ccc; so text won't be gray by default */
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .card:hover {
+      transform: translateY(4px) scale(0.98);
+      box-shadow:
+          0 0 10px rgba(0, 0, 0, 0.6),
+          0 0 15px rgba(0, 0, 0, 0.4) inset;
+    }
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 18px;
+      font-weight: bold;
+      color: #0D47A1; /* Keep the header text blue for contrast */
+    }
+
+    .icon {
+      width: 40px;
+      height: 40px;
+      background-color: #0D47A1;
+      color: #fff; /* White icon text against blue background */
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      border-radius: 5px;
+      font-size: 24px;
+    }
+
+    /* Slightly lighter divider color */
+    .divider {
+      border-bottom: 2px solid #888;
+      margin: 10px 0;
+    }
+
+    /* Make the body text black for readability */
+    .info {
+      font-size: 14px;
+      color: #000;
+    }
+
+    /* Bold elements also in black */
+    .bold {
+      font-weight: bold;
+      color: #000;
+    }
+  </style>
+
+  <script>
+    function updateCard(data) {
+      document.getElementById('trafficNo').innerText = data["Traffic Number"] || "N/A";
+      document.getElementById('age').innerText = data["Age"] ? data["Age"] + " YEARS" : "N/A";
+      // For Acd_id, we use the Traffic Number again
+      document.getElementById('idNumber').innerText = data["Traffic Number"] || "N/A";
+      document.getElementById('nationality').innerText = data["Nationality"] || "N/A";
+      document.getElementById('dlIssuance').innerText = data["Driving Experience"] || "N/A";
+      document.getElementById('carModel').innerText = data["Car Model"] || "N/A";
+    }
+
+    // Function to receive SAS VA Data-Driven Content messages
+    function onMessage(evt) {
+      console.log("[DDC] Received event:", evt);
+
+      if (!evt.data) {
+        console.warn("[DDC] No event data received.");
+        return;
+      }
+
+      let sasData = evt.data;
+      console.log("[DDC] Raw Data:", JSON.stringify(sasData, null, 2));
+
+      if (!sasData.data || sasData.data.length === 0) {
+        console.warn("[DDC] No valid data received from SAS.");
+        return;
+      }
+
+      // Use the first row of data (adjust if needed)
+      let rowData = sasData.data[0];
+      let columnMapping = sasData.columns; // Column names (or objects) from SAS VA
+
+      console.log("[DDC] Column Mapping:", columnMapping);
+      console.log("[DDC] Row Data:", rowData);
+
+      if (!columnMapping || columnMapping.length === 0) {
+        console.error("[DDC] No column mapping received.");
+        return;
+      }
+
+      // Convert SAS data to a JSON object
+      let formattedData = {};
+      columnMapping.forEach((col, index) => {
+        // If col is an object, use its 'label' property; otherwise, use it directly.
+        let key = (typeof col === "object" && col.label) ? col.label : col;
+        formattedData[key] = rowData[index];
+      });
+
+      console.log("[DDC] Parsed Data:", formattedData);
+      updateCard(formattedData);
+    }
+
+    // Listen for messages from SAS VA
+    if (window.addEventListener) {
+      window.addEventListener("message", onMessage, false);
+    } else {
+      window.attachEvent("onmessage", onMessage);
+    }
+  </script>
+</head>
+<body>
+    <div class="card">
+        <div class="card-header">
+            <div class="icon">🆔</div>
+            <span id="trafficNo">TRAFFIC FILE NO</span>
+        </div>
+        <div class="divider"></div>
+        <p class="info">
+          <span class="bold" id="age">AGE</span> | 
+          ID: <span class="bold" id="idNumber">Traffic Number</span>
+        </p>
+        <p class="info">Nationality: <span class="bold" id="nationality">NATIONALITY</span></p>
+        <p class="info">Driving Experience: <span class="bold" id="dlIssuance">Driving Experience</span></p>
+        <p class="info">Car Model: <span class="bold" id="carModel">Car Model</span></p>
+    </div>
+</body>
+</html>
