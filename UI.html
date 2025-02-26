@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Lighter Gradient Container with Hover Effect</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background: transparent; /* Keep transparent if embedding elsewhere */
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      font-family: Arial, sans-serif;
+      overflow: hidden; /* Prevent scrolling on the overall page */
+    }
+
+    .light-card {
+      width: 600px; /* Adjust as needed */
+      min-height: 400px; /* Adjust as needed */
+      /* Lighter gray gradient */
+      background: linear-gradient(135deg, #d4d4d4, #e7e7e7);
+      border-radius: 10px;
+      box-shadow:
+          0 0 15px rgba(0, 0, 0, 0.6),
+          0 0 20px rgba(0, 0, 0, 0.4) inset;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      color: #000; /* Black text for contrast */
+      padding: 20px;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      overflow: hidden; /* Prevent scrolling inside the card if content overflows */
+    }
+
+    .light-card:hover {
+      transform: translateY(4px) scale(0.98); /* Simulate press down */
+      box-shadow:
+          0 0 10px rgba(0, 0, 0, 0.6),
+          0 0 15px rgba(0, 0, 0, 0.4) inset;
+    }
+  </style>
+</head>
+<body>
+  <div class="light-card">
+    <!-- Add your charts, text, or other UI elements here -->
+  </div>
+</body>
+</html>
