@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Violation and Accident Track (Lighter Gray Gradient)</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: transparent; /* Transparent background for SAS VA embedding */
+      font-family: Arial, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      overflow: hidden; /* Prevent scrolling on the overall page */
+    }
+
+    /* Lighter gray gradient container */
+    .crosstab-card {
+      width: 600px;
+      background: linear-gradient(135deg, #d4d4d4, #e7e7e7);
+      border-radius: 8px;
+      box-shadow:
+          0 0 15px rgba(0, 0, 0, 0.6),
+          0 0 20px rgba(0, 0, 0, 0.4) inset;
+      padding: 20px;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      overflow: hidden; /* Prevent scrolling within the card if content overflows */
+    }
+
+    .crosstab-card:hover {
+      transform: translateY(4px) scale(0.98);
+      box-shadow:
+          0 0 10px rgba(0, 0, 0, 0.6),
+          0 0 15px rgba(0, 0, 0, 0.4) inset;
+    }
+
+    /* Header & subheader styling */
+    .crosstab-header {
+      font-size: 18px;
+      font-weight: bold;
+      color: #000; /* Black text instead of white */
+      margin-bottom: 0;
+    }
+
+    .crosstab-subheader {
+      font-size: 14px;
+      color: #555; /* Dark gray for subheader */
+      margin-top: 4px;
+      margin-bottom: 20px;
+    }
+
+    /* Table styling for light background */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: center;
+      background-color: transparent;
+    }
+
+    thead th {
+      background-color: #ccc; /* Light header background */
+      color: #000;           /* Black header text */
+      font-weight: bold;
+      padding: 8px;
+    }
+
+    tbody th {
+      background-color: #ddd; /* Slightly darker than header for row labels */
+      color: #000;
+      text-align: left;
+      padding: 8px;
+      font-weight: normal;
+    }
+
+    tbody td {
+      border: 1px solid #ccc;
+      padding: 8px;
+      font-size: 14px;
+      color: #000; /* Black text in cells */
+    }
+  </style>
+  <!-- SAS DDC Utilities (if needed) -->
+  <!--
+  <script type="text/javascript" src="util/messagingUtil.js"></script>
+  <script type="text/javascript" src="util/contentUtil.js"></script>
+  -->
+</head>
+<body>
+  <div class="crosstab-card">
+    <h2 class="crosstab-header">VIOLATION AND ACCIDENT TRACK</h2>
+    <div id="crosstabContainer"></div>
+  </div>
+
+  <script>
+    /*****************************************************************************
+     * 1) PIVOTING THE DATA
+     *    We'll pivot the SAS data so columns = unique Years,
+     *    rows = Record Type, and cells = Frequency.
+     ****************************************************************************/
+    function buildPivotTable(sasData) {
+      // Expecting columns: ["Year", "Record Type", "Frequency"]
+      // and data like: [[2023, "Violation", 1], [2023, "Accidents", 0], ...]
+
+      // 1. Identify which column index is which.
+      let yearIndex = -1;
+      let recordTypeIndex = -1;
+      let freqIndex = -1;
+
+      sasData.columns.forEach((col, i) => {
+        let colName = (typeof col === "object" && col.label) ? col.label : col;
+        if (colName === "Year") yearIndex = i;
+        if (colName === "Record Type") recordTypeIndex = i;
+        if (colName === "Frequency") freqIndex = i;
+      });
+
+      // 2. Extract unique years & record types
+      let yearSet = new Set();
+      let recordTypeSet = new Set();
+
+      sasData.data.forEach(row => {
+        let y = row[yearIndex];
+        let rt = row[recordTypeIndex];
+        yearSet.add(y);
+        recordTypeSet.add(rt);
+      });
+
+      // Convert sets to arrays and sort years descending (e.g., 2024 -> 2023 -> 2022)
+      let uniqueYears = Array.from(yearSet).sort((a, b) => b - a);
+      let uniqueRecordTypes = Array.from(recordTypeSet);
+
+      // 3. Build a lookup for Frequency: freqMap[recordType][year] = Frequency
+      let freqMap = {};
+      uniqueRecordTypes.forEach(rt => { freqMap[rt] = {}; });
+
+      sasData.data.forEach(row => {
+        let y = row[yearIndex];
+        let rt = row[recordTypeIndex];
+        let freq = row[freqIndex];
+        freqMap[rt][y] = freq;
+      });
+
+      // 4. Build the HTML table
+      let html = '<table>';
+
+      // Table head row
+      html += '<thead><tr><th></th>'; // empty top-left corner
+      uniqueYears.forEach(y => {
+        html += `<th>${y}</th>`;
+      });
+      html += '</tr></thead>';
+
+      // Table body
+      html += '<tbody>';
+      uniqueRecordTypes.forEach(rt => {
+        html += `<tr><th>${rt}</th>`;
+        uniqueYears.forEach(y => {
+          let val = freqMap[rt][y] || 0; // fallback to 0 if missing
+          html += `<td>${val}</td>`;
+        });
+        html += '</tr>';
+      });
+      html += '</tbody></table>';
+
+      return html;
+    }
+
+    /*****************************************************************************
+     * 2) RECEIVING THE DATA FROM SAS
+     ****************************************************************************/
+    function onMessage(evt) {
+      console.log("[DDC] Received event:", evt);
+      let payload = evt.data;
+      if (!payload || !payload.data || payload.data.length === 0) {
+        console.warn("[DDC] No valid data received.");
+        return;
+      }
+
+      console.log("[DDC] Full payload:", JSON.stringify(payload, null, 2));
+
+      // Build pivot table HTML
+      let pivotHTML = buildPivotTable(payload);
+
+      // Inject into the container
+      document.getElementById("crosstabContainer").innerHTML = pivotHTML;
+    }
+
+    // Standard approach to listen for messages from SAS VA
+    if (window.addEventListener) {
+      window.addEventListener("message", onMessage, false);
+    } else {
+      window.attachEvent("onmessage", onMessage);
+    }
+
+    /*****************************************************************************
+     * 3) OPTIONAL: SIMULATE A MESSAGE FOR TESTING
+     ****************************************************************************/
+    window.addEventListener('load', () => {
+      // Uncomment to test locally:
+      /*
+      setTimeout(() => {
+        let testPayload = {
+          columns: [
+            { label: "Year" },
+            { label: "Record Type" },
+            { label: "Frequency" }
+          ],
+          data: [
+            [2023, "Violation", 0],
+            [2022, "Violation", 1],
+            [2021, "Violation", 2],
+            [2020, "Violation", 1],
+            [2019, "Violation", 3],
+            [2023, "Accidents", 0],
+            [2022, "Accidents", 1],
+            [2021, "Accidents", 0],
+            [2020, "Accidents", 0],
+            [2019, "Accidents", 1]
+          ]
+        };
+        window.postMessage(testPayload, "*");
+      }, 1000);
+      */
+    });
+  </script>
+</body>
+</html>
