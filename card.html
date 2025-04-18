@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Driver Info Card (Lighter Gray Gradient with Black Text)</title>
+  <title>Driver Info Card (Lighter Gray Gradient with Dark Green)</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -24,7 +24,6 @@
       box-shadow:
           0 0 15px rgba(0, 0, 0, 0.6),
           0 0 20px rgba(0, 0, 0, 0.4) inset;
-      /* Removed color: #ccc; so text won't be gray by default */
       transition: transform 0.2s ease, box-shadow 0.2s ease;
     }
 
@@ -41,14 +40,14 @@
       gap: 10px;
       font-size: 18px;
       font-weight: bold;
-      color: #0D47A1; /* Keep the header text blue for contrast */
+      color: #17785F; /* Dark green text */
     }
 
     .icon {
       width: 40px;
       height: 40px;
-      background-color: #0D47A1;
-      color: #fff; /* White icon text against blue background */
+      background-color: #17785F; /* Dark green background */
+      color: #fff; /* White icon text */
       display: flex;
       justify-content: center;
       align-items: center;
@@ -77,13 +76,28 @@
 
   <script>
     function updateCard(data) {
+      // Use the column "Traffic Number" for both trafficNo and idNumber (if that's your ID field)
       document.getElementById('trafficNo').innerText = data["Traffic Number"] || "N/A";
-      document.getElementById('age').innerText = data["Age"] ? data["Age"] + " YEARS" : "N/A";
-      // For Acd_id, we use the Traffic Number again
       document.getElementById('idNumber').innerText = data["Traffic Number"] || "N/A";
-      document.getElementById('nationality').innerText = data["Nationality"] || "N/A";
-      document.getElementById('dlIssuance').innerText = data["Driving Experience"] || "N/A";
-      document.getElementById('carModel').innerText = data["Car Model"] || "N/A";
+
+      // Age
+      if (data["Age"]) {
+        document.getElementById('age').innerText = data["Age"] + " YEARS";
+      } else {
+        document.getElementById('age').innerText = "N/A";
+      }
+
+      // Nationality
+      document.getElementById('nationality').innerText =
+        data["Nationality"] || "N/A";
+
+      // Driving Experience (years in UAE)
+      document.getElementById('dlIssuance').innerText =
+        data["Driving Experience (years in UAE)"] || "N/A";
+
+      // Car Model
+      document.getElementById('carModel').innerText =
+        data["MODEL_NAME"] || "N/A";
     }
 
     // Function to receive SAS VA Data-Driven Content messages
@@ -133,6 +147,28 @@
     } else {
       window.attachEvent("onmessage", onMessage);
     }
+
+    /* 
+    // OPTIONAL: Simulate data for local testing:
+    window.addEventListener('load', () => {
+      setTimeout(() => {
+        // Example test data:
+        let testPayload = {
+          columns: [
+            { label: "Traffic Number" },
+            { label: "Age" },
+            { label: "Nationality" },
+            { label: "Driving Experience (years in UAE)" },
+            { label: "MODEL_NAME" }
+          ],
+          data: [
+            [123456, 35, "Emirati", 10, "Toyota Camry"]
+          ]
+        };
+        window.postMessage(testPayload, "*");
+      }, 1000);
+    });
+    */
   </script>
 </head>
 <body>
