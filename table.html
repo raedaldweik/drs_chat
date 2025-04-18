@@ -18,7 +18,7 @@
 
     /* Lighter gray gradient container */
     .crosstab-card {
-      width: 600px;
+      width: 400px;
       background: linear-gradient(135deg, #d4d4d4, #e7e7e7);
       border-radius: 8px;
       box-shadow:
@@ -45,7 +45,7 @@
     }
 
     .crosstab-subheader {
-      font-size: 14px;
+      font-size: 12px;
       color: #555; /* Dark gray for subheader */
       margin-top: 4px;
       margin-bottom: 20px;
@@ -97,10 +97,10 @@
     /*****************************************************************************
      * 1) PIVOTING THE DATA
      *    We'll pivot the SAS data so columns = unique Years,
-     *    rows = Record Type, and cells = Frequency.
+     *    rows = record_type, and cells = Frequency.
      ****************************************************************************/
     function buildPivotTable(sasData) {
-      // Expecting columns: ["Year", "Record Type", "Frequency"]
+      // Expecting columns: ["Year", "record_type", "Frequency"]
       // and data like: [[2023, "Violation", 1], [2023, "Accidents", 0], ...]
 
       // 1. Identify which column index is which.
@@ -109,9 +109,11 @@
       let freqIndex = -1;
 
       sasData.columns.forEach((col, i) => {
+        // col could be a string or an object with a 'label'
         let colName = (typeof col === "object" && col.label) ? col.label : col;
+
         if (colName === "Year") yearIndex = i;
-        if (colName === "Record Type") recordTypeIndex = i;
+        if (colName === "record_type") recordTypeIndex = i;
         if (colName === "Frequency") freqIndex = i;
       });
 
@@ -130,7 +132,7 @@
       let uniqueYears = Array.from(yearSet).sort((a, b) => b - a);
       let uniqueRecordTypes = Array.from(recordTypeSet);
 
-      // 3. Build a lookup for Frequency: freqMap[recordType][year] = Frequency
+      // 3. Build a lookup for Frequency: freqMap[record_type][year] = Frequency
       let freqMap = {};
       uniqueRecordTypes.forEach(rt => { freqMap[rt] = {}; });
 
@@ -197,26 +199,22 @@
      * 3) OPTIONAL: SIMULATE A MESSAGE FOR TESTING
      ****************************************************************************/
     window.addEventListener('load', () => {
-      // Uncomment to test locally:
+      // Uncomment this block to test locally:
       /*
       setTimeout(() => {
         let testPayload = {
           columns: [
             { label: "Year" },
-            { label: "Record Type" },
+            { label: "record_type" },
             { label: "Frequency" }
           ],
           data: [
             [2023, "Violation", 0],
             [2022, "Violation", 1],
             [2021, "Violation", 2],
-            [2020, "Violation", 1],
-            [2019, "Violation", 3],
             [2023, "Accidents", 0],
-            [2022, "Accidents", 1],
-            [2021, "Accidents", 0],
-            [2020, "Accidents", 0],
-            [2019, "Accidents", 1]
+            [2022, "Accidents", 2],
+            [2021, "Accidents", 1]
           ]
         };
         window.postMessage(testPayload, "*");
